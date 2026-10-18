@@ -57,7 +57,9 @@ permissions:
   actions: read
 
 env:
-  OPTISCALER_REPO: ShyVortex/OptiScaler-DLSSNR-PreSR-Multipass
+  # Point at our own OptiScaler fork so the menu changes (AmpereMfgSuperResolution, clearer FG Lite label)
+  # are part of the packaged binaries. The fork publishes an unsigned build to its "latest" release.
+  OPTISCALER_REPO: aomtest/OptiScaler-DLSSNR-PreSR-Multipass
   STREAMLINE_URL: "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.14.16/streamline-sdk-v2.14.16.zip"
   PATCHED_DLSSNR_URL: "https://www.dropbox.com/scl/fi/7seq4ci14u8laj3v7h21q/nvngx_dlssnr.dll?rlkey=lxjwf7zdl26g66t10isnogism&st=9omklihc&dl=1"
   ORIGINAL_STREAMLINE_DLSSNR_URL: "https://www.dropbox.com/scl/fi/77w2lo8dm7inwboafznos/nvngx_dlssnr_original.dll?rlkey=kuvg1yt7qi89kri3o4wyjhwgd&st=uwov3buy&dl=1"
@@ -1091,8 +1093,8 @@ jobs:
             
             $srcModular = Join-Path $tempExtract "dlssg_sm86"
             if (Test-Path $srcModular) {
-                # Copy required FG components: backend, kernels, runtime
-                @("backend", "kernels", "runtime") | ForEach-Object {
+                # Copy required FG components plus the INT8 Super Resolution pack (sr)
+                @("backend", "kernels", "runtime", "sr") | ForEach-Object {
                     $srcComp = Join-Path $srcModular $_
                     $destComp = Join-Path $modularDir $_
                     if (Test-Path $srcComp) {
@@ -1121,6 +1123,15 @@ jobs:
                 "$((Get-FileHash -Path $kernelsPath -Algorithm SHA256).Hash) *dlssg_sm86/kernels/fg_kernels.dll",
                 "$((Get-FileHash -Path $runtimePath -Algorithm SHA256).Hash) *dlssg_sm86/runtime/nvngx_dlssg.dll"
             )
+            # INT8 Super Resolution pack (0.4.0+); only listed when the upstream package carries it
+            foreach ($srFile in @("sr\nvngx_dlss.dll", "sr\sr_kernels.dll"))
+            {
+                $srPath = Join-Path $modularDir $srFile
+                if (Test-Path $srPath)
+                {
+                    $checksumLines += "$((Get-FileHash -Path $srPath -Algorithm SHA256).Hash) *dlssg_sm86/$($srFile -replace '\\','/')"
+                }
+            }
             $checksumContent = $checksumLines -join "`r`n"
             Set-Content -Path (Join-Path $dlssgDir "checksums.sha256") -Value $checksumContent -Encoding ASCII
             Write-Host "Updated dlssg_sm86 0.4.0 modular files from $dlssgRepo (Hash: $remoteHash)."
@@ -1129,7 +1140,9 @@ jobs:
         }
         
         # Explicitly ensure excluded modules are not bundled (even on cache hit)
-        @("sr", "xefg") | ForEach-Object {
+        # sr ships now: the OptiScaler menu exposes it as AmpereMfgSuperResolution.
+        # xefg stays out: the XeSS-FG engine is not exposed by OptiScaler.
+        @("xefg") | ForEach-Object {
             $exDir = Join-Path $modularDir $_
             if (Test-Path $exDir) {
                 Remove-Item -Path $exDir -Recurse -Force

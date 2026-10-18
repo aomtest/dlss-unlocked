@@ -372,7 +372,8 @@ $filesExist = (Test-Path $targetDlssgDll) -and
               (Test-Path $targetDlssgIni) -and
               (Test-Path $targetBackend) -and
               (Test-Path $targetKernels) -and
-              (Test-Path $targetRuntime)
+              (Test-Path $targetRuntime) -and
+              (Test-Path (Join-Path $targetModularDir "sr\sr_kernels.dll"))
 
 $needsDownload = (-not $filesExist) -or
                  ($remoteHash -and ($localHash -ne $remoteHash)) -or
@@ -444,8 +445,8 @@ if ($needsDownload) {
 
         $srcModularDir = Join-Path $sourceDir "dlssg_sm86"
         if (Test-Path $srcModularDir) {
-            # Copy backend, kernels, and runtime (required for FG)
-            $components = @("backend", "kernels", "runtime")
+            # Copy backend, kernels, runtime (required for FG) and sr (INT8 Super Resolution, 0.4.0+)
+            $components = @("backend", "kernels", "runtime", "sr")
             foreach ($comp in $components) {
                 $srcComp = Join-Path $srcModularDir $comp
                 $destComp = Join-Path $targetModularDir $comp
@@ -458,7 +459,9 @@ if ($needsDownload) {
         }
 
         # Explicitly ensure excluded modules are not bundled
-        $excludedModules = @("sr", "xefg")
+        # sr is bundled now (INT8 Super Resolution is exposed in the OptiScaler menu as AmpereMfgSuperResolution).
+        # xefg stays out: the XeSS-FG engine is not exposed by OptiScaler.
+        $excludedModules = @("xefg")
         foreach ($ex in $excludedModules) {
             $exDir = Join-Path $targetModularDir $ex
             if (Test-Path $exDir) {
@@ -479,7 +482,7 @@ if ($needsDownload) {
     }
 } else {
     # Ensure excluded directories are pruned even on cache hits
-    $excludedModules = @("sr", "xefg")
+    $excludedModules = @("xefg")
     foreach ($ex in $excludedModules) {
         $exDir = Join-Path $targetModularDir $ex
         if (Test-Path $exDir) {
