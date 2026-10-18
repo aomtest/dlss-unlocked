@@ -509,6 +509,7 @@ jobs:
       if: (matrix.build_type == 'nightly' && needs.check-versions.outputs.should_build_nightly == 'true') || (matrix.build_type == 'latest' && needs.check-versions.outputs.should_build_latest == 'true')
       shell: powershell
       run: |
+        $ProgressPreference = 'SilentlyContinue'
         $downloadUrl = "${{ matrix.build_type == 'nightly' && needs.check-versions.outputs.nightly_download_url || needs.check-versions.outputs.latest_download_url }}"
         $version = "${{ matrix.build_type == 'nightly' && needs.check-versions.outputs.nightly_version || needs.check-versions.outputs.latest_version }}"
         $buildType = "${{ matrix.build_type }}"
@@ -758,6 +759,7 @@ jobs:
       if: steps.cache-streamline.outputs.cache-hit != 'true' && ((matrix.build_type == 'nightly' && needs.check-versions.outputs.should_build_nightly == 'true') || (matrix.build_type == 'latest' && needs.check-versions.outputs.should_build_latest == 'true'))
       shell: powershell
       run: |
+        $ProgressPreference = 'SilentlyContinue'
         $streamlineUrl = "$env:STREAMLINE_URL"
         $streamlineDir = "Dll version\streamline"
         if (-not (Test-Path $streamlineDir)) { New-Item -ItemType Directory -Path $streamlineDir -Force | Out-Null }
@@ -882,6 +884,7 @@ jobs:
       if: steps.cache-dlssnr.outputs.cache-hit != 'true' && ((matrix.build_type == 'nightly' && needs.check-versions.outputs.should_build_nightly == 'true') || (matrix.build_type == 'latest' && needs.check-versions.outputs.should_build_latest == 'true'))
       shell: powershell
       run: |
+        $ProgressPreference = 'SilentlyContinue'
         $patchedDlssnrUrl = "$env:PATCHED_DLSSNR_URL"
         if ($patchedDlssnrUrl) {
             Write-Host "Downloading patched nvngx_dlssnr.dll from: $patchedDlssnrUrl"
@@ -997,6 +1000,7 @@ jobs:
       if: (matrix.build_type == 'nightly' && needs.check-versions.outputs.should_build_nightly == 'true') || (matrix.build_type == 'latest' && needs.check-versions.outputs.should_build_latest == 'true')
       shell: powershell
       run: |
+        $ProgressPreference = 'SilentlyContinue'
         $dlssgDir = "Dll version\dlssg_sm86"
         if (-not (Test-Path $dlssgDir)) { New-Item -ItemType Directory -Path $dlssgDir -Force | Out-Null }
         
